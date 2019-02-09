@@ -11,6 +11,7 @@
 #include <fstream>
 #include <thread>
 #include <chrono>
+#include <iomanip>
 
 using namespace rw;
 
@@ -223,7 +224,7 @@ void loggerWriterThread( bool retainTemporarily, std::string loggerId, int loopC
     {
         for (int i=0;i<loopCount;++i)
         {
-            LOGF(Logger::LOG_LEVEL_ERROR, loggerId) << i;
+            LOGF(Logger::LOG_LEVEL_ERROR, loggerId) << std::setw(2) << std::setfill('0') << i;
         }
     }
     else
@@ -231,7 +232,7 @@ void loggerWriterThread( bool retainTemporarily, std::string loggerId, int loopC
         Logger::LogPtr ptr = Logger::getFileLogger( loggerId );
         for (int i=0;i<loopCount;++i)
         {
-            ptr->operator()(Logger::LOG_LEVEL_ERROR) << i;
+            ptr->operator()(Logger::LOG_LEVEL_ERROR) << std::setw(2) << std::setfill('0') << i;
         }
     }
 }
@@ -261,6 +262,30 @@ void TEST_multithreadedDestructionWhileInUse()
     remove(testFile.c_str());
 }
 
+void TEST_multithreadedMultipleThreadsSingleFile()
+{
+    const std::string testFile = "TEST_multithreadedMultipleThreadsSingleFile";
+    auto customLogger = Logger::getFileLogger(testFile, Logger::ACTION_NONE);
+
+    // Create multiple writers to the same logger
+    const int threadCnt = 8;
+    std::thread* threads[threadCnt];
+    for ( int i=0;i<threadCnt;++i)
+    {
+        threads[i] = new std::thread( loggerWriterThread, true, testFile, 100 );
+    }
+    for ( int i=0;i<threadCnt;++i)
+    {
+        threads[i]->join();
+        delete threads[i];
+    }
+    
+    assert(getFileSize(testFile) == threadCnt * 100 /*Thread fuunction iteration*/ * 49 /*Size per log*/);
+    
+    Logger::destroy(testFile);
+    remove(testFile.c_str());
+}
+
 int main(int argc, const char * argv[]) {
     
     TEST_init();
@@ -271,6 +296,7 @@ int main(int argc, const char * argv[]) {
     //TEST_rotate(); --> Creates multiple files, disabled for now.
     TEST_multithreadedCreationAndDestruction();
     TEST_multithreadedDestructionWhileInUse();
+    TEST_multithreadedMultipleThreadsSingleFile();
     
     return 0;
 }
