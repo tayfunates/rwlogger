@@ -137,9 +137,9 @@ void TEST_truncation()
     const size_t numberOfTrials = 100;
     
     for(size_t i=0; i < numberOfTrials; i++) {
-        //For each trial file size should not exceed maxSize + longStringSize -> We truncate in the next round
+        //For each trial file size should not exceed maxSize + longStringSize + 45-> We truncate in the next round
         customLogger->operator()(Logger::LOG_LEVEL_WARNING) << longString;
-        assert(getFileSize(testFile) <= maxSize+longStringSize);
+        assert(getFileSize(testFile) <= maxSize+longStringSize+45); //approximate header size (45)
     }
     
     Logger::destroy(testFile);
