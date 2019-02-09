@@ -9,6 +9,8 @@
 #include <iostream>
 #include "Logger.h"
 #include <fstream>
+#include <thread>
+#include <chrono>
 
 using namespace rw;
 
@@ -139,6 +141,41 @@ void TEST_truncation()
     remove(testFile.c_str());
 }
 
+void TEST_rotate()
+{
+    const std::string testFile = "TEST_rotate";
+    const size_t longStringSize = 200;
+    const std::string longString = std::string(longStringSize, 'a');
+    const size_t maxSize = 2048;
+    
+    auto customLogger = Logger::getFileLogger(testFile, Logger::ACTION_ROTATE);
+    customLogger->setMaxLogSize(maxSize);
+    
+    const size_t numberOfTrials = 100;
+    
+    bool willRotate = false;
+    for(size_t i=0; i < numberOfTrials; i++) {
+        customLogger->operator()(Logger::LOG_LEVEL_WARNING) << longString;
+        const size_t fileSize = getFileSize(testFile);
+        if(willRotate == true)
+        {
+            assert(fileSize <= longStringSize+45); //If rotation decision has been made in the previous round, then the size should be smaller than the size of the newly added log message plus approximate header size (45)
+            willRotate = false;
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+        
+        if(fileSize>maxSize)
+        {
+            willRotate = true;
+        }
+    }
+    
+    remove(testFile.c_str());
+    
+    //TO DO: Check and remove rotated files
+    //Logger does not keep track of the rotated files currently.
+}
+
 int main(int argc, const char * argv[]) {
     
     TEST_init();
@@ -146,6 +183,7 @@ int main(int argc, const char * argv[]) {
     TEST_enableDisable();
     TEST_logLevel();
     TEST_truncation();
+    TEST_rotate();
     
     return 0;
 }
