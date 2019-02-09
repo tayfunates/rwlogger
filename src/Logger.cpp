@@ -12,6 +12,7 @@
 #include <chrono>
 #include <thread>
 #include <algorithm>
+#include <iomanip>
 #ifdef _MSC_VER
 #define SPRINTF sprintf_s
 #else
@@ -23,8 +24,6 @@
 
 namespace rw
 {
-
-
     //Logger related implementations
     
     Logger::Logger()
@@ -166,6 +165,24 @@ namespace rw
         return std::string(buff);
     }
     
+    static std::string getThreadIDString()
+    {
+        auto threadId = std::this_thread::get_id();
+
+#ifdef _MSC_VER
+        uint64_t n=0;
+        std::stringstream ss;
+        ss << threadId;
+        ss >> std::dec >> n;
+        ss = std::stringstream();
+        ss << std::setw(16) << std::setfill('0') << std::hex << n;
+#else
+        std::stringstream ss;
+        ss << std::setw(16) << std::setfill('0') << threadId;
+#endif
+        return std::string(ss.str());
+    }
+    
     void Logger::doLog(const Level& level, const std::string& message)
     {
         if(!m_enabled) {
@@ -176,11 +193,10 @@ namespace rw
             return;
         }
         
-        const std::thread::id threadId = std::this_thread::get_id();
         const std::string lvl = getLogLevelString(level);
         
         std::stringstream messageStream;
-        messageStream << getTimeAndDateString() << " " << threadId << " " << lvl << "| " << message << std::endl;
+        messageStream << getTimeAndDateString() << " " << getThreadIDString() << " " << lvl << "| " << message << std::endl;
         
         {
             std::lock_guard<std::recursive_mutex> lk(m_logMutex);
