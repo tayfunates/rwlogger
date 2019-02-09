@@ -169,14 +169,18 @@ namespace rw
             if(m_overflowAction != ACTION_NONE)
             {
                 const size_t logSize = getLogSize();
-                if(m_overflowAction == ACTION_TRUNCATE && (logSize > m_maxLogSize))
+                if(logSize > m_maxLogSize)
                 {
-                    truncate(m_maxLogSize/2);
+                    if(m_overflowAction == ACTION_TRUNCATE)
+                    {
+                        truncate(m_maxLogSize/2);
+                    }
+                    if(m_overflowAction == ACTION_ROTATE)
+                    {
+                        rotate();
+                    }
                 }
             }
-
-            
-            //TO DO: rotation
             
             if(open() == RES_OK)
             {
@@ -208,7 +212,7 @@ namespace rw
             timeStr.erase(std::remove(timeStr.begin(), timeStr.end(), ' '), timeStr.end());
             
             std::fstream tempFile;
-            std::string tempFileName(m_path+timeStr);
+            std::string tempFileName(m_path+"."+timeStr+".log");
             
             tempFile.open( tempFileName.c_str(), std::ios::out | std::ios::binary );
             if(tempFile.is_open())
@@ -231,6 +235,17 @@ namespace rw
             return RES_OK;
         }
         return RES_ERROR;
+    }
+    
+    Logger::Result Logger::rotate()
+    {
+        std::string timeStr = getTimeAndDateString();
+        std::replace (timeStr.begin(), timeStr.end(), ':', ' ');
+        timeStr.erase(std::remove(timeStr.begin(), timeStr.end(), ' '), timeStr.end());
+        std::string newFileName(m_path+"."+timeStr+".log");
+        rename(m_path.c_str(), newFileName.c_str());
+        remove(m_path.c_str());
+        return RES_OK;
     }
     
     //Manager related implementations

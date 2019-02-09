@@ -175,12 +175,19 @@ namespace rw
         void close();
         
         /**
-         * @brief                       Truncates the  log file to the given new length. Length is approximate.
+         * @brief                       Truncates the  log file if the log size exceeds maximum size to the given new length. Length is approximate.
          * @param   newLen              New length of the log file. If new length is smaller then min length is assigned as new length
          *
          * @return                      RES_OK if successful, RES_ERROR otherwise
          */
         Result truncate( size_t newLen );
+        
+        /**
+         * @brief                       Rotates the file to a new file inside the current directory if the log size exceeds maximum size. New file name is decided using current time and date.
+         *
+         * @return                      RES_OK if successful, RES_ERROR otherwise
+         */
+        Result rotate();
         
         /**
          * @brief    Does the actual logging with given level and message.
