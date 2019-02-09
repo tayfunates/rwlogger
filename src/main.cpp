@@ -7,9 +7,14 @@
 //
 
 #include <iostream>
+#include "Logger.h"
+
+using namespace rw;
 
 int main(int argc, const char * argv[]) {
     // insert code here...
-    std::cout << "Hello, World!\n";
+    LOGC(Logger::LOG_LEVEL_WARNING) << " Hello World!" << " and a integer " <<  17 <<std::endl;
+    LOGD(Logger::LOG_LEVEL_WARNING) << " Hello World!" << " and a integer " <<  17 <<std::endl;
+    LOGF(Logger::LOG_LEVEL_WARNING, "Deneme.txt") << " Hello World!" << " and a integer " <<  17 <<std::endl;
     return 0;
 }

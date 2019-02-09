@@ -19,6 +19,11 @@
 
 namespace rw
 {
+// Logger convenience macros.
+#define LOGC(level) Logger::getConsoleLogger()->operator()((level))
+#define LOGD(level) Logger::getDefaultLogger()->operator()((level))
+#define LOGF(level, file) Logger::getFileLogger((file))->operator()((level))
+    
     /**
      * @brief    Thread safe Logger class.
      */
@@ -53,12 +58,40 @@ namespace rw
         };
         
     private:
+        
+        //Child ostringstream class enabling << operator to be used by users
+        //It enables user defined types to be logged
+        //Created for each user log call and flushes its message using Logger just before its destruction
+        //http://www.vilipetek.com/2014/04/17/thread-safe-simple-logger-in-c11/
+        class logstream : public std::ostringstream
+        {
+        public:
+            logstream(Logger& oLogger, const Level& nLevel) :
+            m_logger(oLogger), m_logLevel(nLevel)
+            {
+            }
+            
+            logstream(const logstream& ls) :
+            m_logger(ls.m_logger), m_logLevel(ls.m_logLevel)
+            {
+            }
+            
+            virtual ~logstream()
+            {
+                m_logger.doLog(m_logLevel, str());
+            }
+            
+        private:
+            Logger& m_logger;
+            Level m_logLevel;
+        };
+        
         std::string             m_path;                         ///< Output file path. In case of empty string, Logger do not write to a file
         void                    *m_pFile;                       ///< Output file. It's opened only when required.
         bool                    m_reflectToConsole;             ///< If true, logger also logs to std::cout or std::cerr (error level messages).
         bool                    m_enabled;                      ///< Enables/disables logging
         size_t                  m_maxLogSize;                   ///< Approximate max length of log file in bytes.
-        std::mutex              m_logMutex;                     ///< For locking logging operation in a multi threaded environment
+        std::recursive_mutex    m_logMutex;                     ///< For locking logging operation in a multi threaded environment
         Level                   m_logLevel;                     ///< Defines the level of importance of the messages, only this and lower level messages are logged.
         OverflowAction          m_overflowAction;               ///< Decides what to do when the log size exceeds max log sizes
         const size_t            m_minLogSize = 512;             ///< Minimum value of maximum log size and minimum size after truncation/rotation
@@ -113,6 +146,17 @@ namespace rw
          */
         size_t getLogSize();
         
+        /**
+         * @brief               Overloaded () operator for logging
+                                Returns an ostringstream object which accumulates messages from the user with C++ style with << operator
+         * @param    level      The log level.
+         * @return              custom ostringstream object
+         */
+        logstream operator()(const Level& level)
+        {
+            return logstream(*this, level);
+        }
+    
     private:
         //Cannot instantiate object outside Logger class
         Logger(const std::string& logFilePath, const OverflowAction& action);
@@ -130,6 +174,11 @@ namespace rw
          */
         void close();
         
+        /**
+         * @brief    Does the actual logging with given level and message.
+         */
+        void doLog(const Level& level, const std::string& message);
+        
     public:
         //Logger manager related types, methods and variables
         
@@ -139,7 +188,7 @@ namespace rw
          * @brief                       Inits logging system and the console logger. If creation of file loggers, manager returns the console logger.
                                         This method is to be sure there is at least one logger object alive before proceeding any other logging operation.
                                         Applications are expected to call this method before any logging even though directly calling logger getters most probably will work.
-         * @return                      RESULT_OK if successful, RES_MEMORY_ERROR if console logger cannot be createds.
+         * @return                      RESULT_OK if successful, RES_MEMORY_ERROR if console logger cannot be created.
          */
         static Result init();
         
@@ -179,7 +228,7 @@ namespace rw
     private:
         typedef std::unordered_map<std::string, LogPtr> LoggerContainer;
         
-        static std::mutex           m_managerMutex;                                     ///< For locking logger creation/deletion in a multi threaded environment
+        static std::recursive_mutex m_managerMutex;                                     ///< For locking logger creation/deletion in a multi threaded environment
         static LoggerContainer      m_loggers;                                          ///< Holds logger objects distributed to the applications with a key corresponding to file names opened
                                                                                         ///< Console logger has a file name of "", default logger has a file name of "rw_default_log.txt".
         static const std::string    defaultLoggerFilePath;                              ///< Default path to logger object

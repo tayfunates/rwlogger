@@ -9,6 +9,8 @@
 #include "Logger.h"
 #include <mutex>
 #include <fstream>
+#include <chrono>
+#include <thread>
 
 //Logger defines
 #define RW_DEFAULT_MAX_LOG_LENGTH    (1024*1024)
@@ -48,6 +50,15 @@ namespace rw
         }
     }
     
+    Logger::Result Logger::open()
+    {
+        std::lock_guard<std::recursive_mutex> lk(m_logMutex);
+        if ( ((std::fstream*)m_pFile)->is_open()) return Logger::RES_OK;
+        
+        ((std::fstream*)m_pFile)->open( m_path.c_str(), std::ios::out | std::ios::app  );
+        return ((std::fstream*)m_pFile)->is_open() ? Logger::RES_OK : Logger::RES_FILE_ERROR;
+    }
+    
     void Logger::close()
     {
         if (((std::fstream*)m_pFile)->is_open()) ((std::fstream*)m_pFile)->close();
@@ -57,7 +68,7 @@ namespace rw
     {
         // RAII locker -> https://en.cppreference.com/w/cpp/language/raii
         // Any updates to Logger objects should be protected
-        std::lock_guard<std::mutex> lk(m_logMutex);
+        std::lock_guard<std::recursive_mutex> lk(m_logMutex);
         m_enabled = enabled;
     }
     
@@ -68,7 +79,7 @@ namespace rw
     
     void Logger::setReflectToConsole( bool b)
     {
-        std::lock_guard<std::mutex> lk(m_logMutex);
+        std::lock_guard<std::recursive_mutex> lk(m_logMutex);
         m_reflectToConsole = b;
     }
     
@@ -79,7 +90,7 @@ namespace rw
     
     void Logger::setMaxLogSize( size_t maxLen )
     {
-        std::lock_guard<std::mutex> lk(m_logMutex);
+        std::lock_guard<std::recursive_mutex> lk(m_logMutex);
         if (maxLen<=m_minLogSize) maxLen = m_minLogSize;
         m_maxLogSize = maxLen;
     }
@@ -91,7 +102,7 @@ namespace rw
     
     void Logger::setLogLevel( Level level )
     {
-        std::lock_guard<std::mutex> lk(m_logMutex);
+        std::lock_guard<std::recursive_mutex> lk(m_logMutex);
         m_logLevel = level;
     }
     
@@ -107,7 +118,7 @@ namespace rw
     
     size_t Logger::getLogSize()
     {
-        std::lock_guard<std::mutex> lk(m_logMutex);
+        std::lock_guard<std::recursive_mutex> lk(m_logMutex);
         if( open() == Logger::RES_OK ) {
             ((std::fstream*)m_pFile)->seekp(0, std::ios::end );
             size_t size = (size_t) ((std::fstream*)m_pFile)->tellp();
@@ -117,20 +128,60 @@ namespace rw
         return 0;
     }
     
-    Logger::Result Logger::open()
+    static std::string getLogLevelString(const Logger::Level& level )
     {
-        std::lock_guard<std::mutex> lk(m_logMutex);
-        if ( ((std::fstream*)m_pFile)->is_open()) return Logger::RES_OK;
+        if (level==Logger::LOG_LEVEL_ERROR) return std::string("ERR");
+        else if (level==Logger::LOG_LEVEL_WARNING) return std::string("WRN");
+        else if (level==Logger::LOG_LEVEL_DEBUG) return std::string("DBG");
+        else return std::string("   ");
+    }
+    
+    void Logger::doLog(const Level& level, const std::string& message)
+    {
+        if(!m_enabled) {
+            return;
+        }
+        if(level > m_logLevel)
+        {
+            return;
+        }
         
-        ((std::fstream*)m_pFile)->open( m_path.c_str(), std::ios::out | std::ios::app  );
-        return ((std::fstream*)m_pFile)->is_open() ? Logger::RES_OK : Logger::RES_FILE_ERROR;
+        auto now = std::chrono::system_clock::now();
+        std::time_t time_for_now = std::chrono::system_clock::to_time_t(now);
+        std::string timeStr( std::ctime(&time_for_now) );
+        size_t end = timeStr.find_last_of('\n');
+        timeStr = timeStr.substr(0,end);
+        
+        const std::thread::id threadId = std::this_thread::get_id();
+        const std::string lvl = getLogLevelString(level);
+        
+        std::stringstream messageStream;
+        messageStream << timeStr << " " << threadId << " " << lvl << "| " << message;
+        
+        {
+            std::lock_guard<std::recursive_mutex> lk(m_logMutex);
+            
+            //TO DO: Truncation and rotation
+            
+            if(open() == RES_OK)
+            {
+                *((std::fstream*)m_pFile) << messageStream.str();
+                close();
+            }
+            
+            if(m_reflectToConsole)
+            {
+                std::ostream &ostr = (level == LOG_LEVEL_ERROR) ? std::cerr : std::cout;
+                ostr << messageStream.str();
+            }
+        }
     }
     
     //Manager related implementations
     
     const std::string Logger::defaultLoggerFilePath = "rw_default_log.txt";
     const std::string Logger::consoleLoggerFilePath = "";
-    std::mutex Logger::m_managerMutex;
+    std::recursive_mutex Logger::m_managerMutex;
     Logger::LoggerContainer Logger::m_loggers;
     
     Logger::Result Logger::init()
@@ -144,7 +195,7 @@ namespace rw
     
     Logger::LogPtr Logger::getConsoleLogger()
     {
-        std::lock_guard<std::mutex> lk(m_managerMutex);
+        std::lock_guard<std::recursive_mutex> lk(m_managerMutex);
         const LoggerContainer::iterator it = m_loggers.find(consoleLoggerFilePath);
         
         LogPtr res;
@@ -165,7 +216,7 @@ namespace rw
     
     Logger::LogPtr Logger::getDefaultLogger(const Logger::OverflowAction& overflowAction)
     {
-        std::lock_guard<std::mutex> lk(m_managerMutex);
+        std::lock_guard<std::recursive_mutex> lk(m_managerMutex);
         const LoggerContainer::iterator it = m_loggers.find(defaultLoggerFilePath);
         
         LogPtr res;
@@ -189,7 +240,7 @@ namespace rw
     
     Logger::LogPtr Logger::getFileLogger(const std::string& filePath, const Logger::OverflowAction& overflowAction)
     {
-        std::lock_guard<std::mutex> lk(m_managerMutex);
+        std::lock_guard<std::recursive_mutex> lk(m_managerMutex);
         const LoggerContainer::iterator it = m_loggers.find(filePath);
         
         LogPtr res;
@@ -222,7 +273,7 @@ namespace rw
             return RES_BAD_ARGS; //Cannot remove default logger
         }
         
-        std::lock_guard<std::mutex> lk(m_managerMutex);
+        std::lock_guard<std::recursive_mutex> lk(m_managerMutex);
         const LoggerContainer::iterator it = m_loggers.find(filePath);
         if(it != m_loggers.end()) {
             m_loggers.erase(it);
