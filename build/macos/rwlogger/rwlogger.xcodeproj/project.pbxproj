@@ -7,8 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		7C5A13C6220DE74600B0E99B /* Logger.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7C5A13C5220DE74600B0E99B /* Logger.cpp */; };
-		7C5A13CB220E15F600B0E99B /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7C5A13CA220E15F600B0E99B /* main.cpp */; };
+		7C074C82220F93BE002A29B4 /* Logger.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7C074C81220F93BE002A29B4 /* Logger.cpp */; };
+		7C074C85220F93D0002A29B4 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7C074C84220F93D0002A29B4 /* main.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -24,10 +24,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		7C074C81220F93BE002A29B4 /* Logger.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Logger.cpp; path = ../../../../src/Logger.cpp; sourceTree = "<group>"; };
+		7C074C83220F93C9002A29B4 /* Logger.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Logger.h; path = ../../../../src/Logger.h; sourceTree = "<group>"; };
+		7C074C84220F93D0002A29B4 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = ../../../../src/main.cpp; sourceTree = "<group>"; };
 		7C5A13BB220DE70A00B0E99B /* rwlogger */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = rwlogger; sourceTree = BUILT_PRODUCTS_DIR; };
-		7C5A13C5220DE74600B0E99B /* Logger.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Logger.cpp; path = ../../../../src/Logger.cpp; sourceTree = "<group>"; };
-		7C5A13C9220DECFC00B0E99B /* Logger.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Logger.h; path = ../../../../src/Logger.h; sourceTree = "<group>"; };
-		7C5A13CA220E15F600B0E99B /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = ../../../../src/main.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -60,9 +60,9 @@
 		7C5A13BD220DE70A00B0E99B /* rwlogger */ = {
 			isa = PBXGroup;
 			children = (
-				7C5A13C5220DE74600B0E99B /* Logger.cpp */,
-				7C5A13C9220DECFC00B0E99B /* Logger.h */,
-				7C5A13CA220E15F600B0E99B /* main.cpp */,
+				7C074C81220F93BE002A29B4 /* Logger.cpp */,
+				7C074C83220F93C9002A29B4 /* Logger.h */,
+				7C074C84220F93D0002A29B4 /* main.cpp */,
 			);
 			path = rwlogger;
 			sourceTree = "<group>";
@@ -123,8 +123,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7C5A13CB220E15F600B0E99B /* main.cpp in Sources */,
-				7C5A13C6220DE74600B0E99B /* Logger.cpp in Sources */,
+				7C074C85220F93D0002A29B4 /* main.cpp in Sources */,
+				7C074C82220F93BE002A29B4 /* Logger.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
