@@ -66,8 +66,8 @@ namespace rw
         class logstream : public std::ostringstream
         {
         public:
-            logstream(Logger& oLogger, const Level& nLevel) :
-            m_logger(oLogger), m_logLevel(nLevel)
+            logstream(Logger& oLogger, const Level& level) :
+            m_logger(oLogger), m_logLevel(level)
             {
             }
             
