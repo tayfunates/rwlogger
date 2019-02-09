@@ -304,5 +304,7 @@ int main(int argc, const char * argv[]) {
     TEST_multithreadedDestructionWhileInUse();
     TEST_multithreadedMultipleThreadsSingleFile();
     
+    std::cout << "Tests are completed without an error!" << std::endl;
+    
     return 0;
 }
