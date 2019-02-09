@@ -366,7 +366,7 @@ namespace rw
     
     Logger::Result Logger::destroy(const std::string& filePath)
     {
-        if(filePath == "")
+        if(filePath == consoleLoggerFilePath)
         {
             return RES_BAD_ARGS; //Cannot remove console logger
         }
