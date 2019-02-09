@@ -50,11 +50,8 @@ namespace rw
             RES_OK = 0,                 ///< Success
             RES_ERROR,                  ///< Generic error
             RES_BAD_ARGS,               ///< Some args are invalid
-            RES_INVALID_VALUE,          ///< A value is invalid
-            RES_INVALID_OPERATION,      ///< Operation is not allowed
             RES_MEMORY_ERROR,           ///< A memory problem occured (most probably out of memory)
             RES_FILE_ERROR,             ///< A file error occured (most probrably file not found or supported)
-            RES_NULL_POINTER            ///< NULL pointer
         };
         
     private:
