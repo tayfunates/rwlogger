@@ -42,7 +42,7 @@ namespace rw
         
         enum OverflowAction {
             ACTION_NONE = 0,
-            ACTION_TRUNCATE = 1,
+            ACTION_TRUNCATE = 1,        ///< Truncation operation of the file to the half of the maximum log size. New size after truncation cannot be smaller than minimum log size.
             ACTION_ROTATE = 2
         };
         
@@ -108,49 +108,49 @@ namespace rw
         bool isReflectToConsole( ) const;
         
         /**
-         * @brief              Sets maximum log size. It does not truncate/rotate the file immediately if the current file size is greater,
-         *                     but new log operation will truncate/rotate the file.
-         * @param    maxLen    The maximum size of log file. If the max log file size is lower than a minimum value, maxLen is set to the minimum allowed size.
+         * @brief                       Sets maximum log size. It does not truncate/rotate the file immediately if the current file size is greater,
+         *                              but new log operation will truncate/rotate the file.
+         * @param    maxLen             The maximum size of log file. If the max log file size is lower than a minimum value, maxLen is set to the minimum allowed size.
          */
         void setMaxLogSize( size_t maxLen );
         
         /**
-         * @brief               Gets maximum log size.
-         * @return              The maximum log size.
+         * @brief                       Gets maximum log size.
+         * @return                      The maximum log size.
          */
         size_t getMaxLogSize() const;
         
         /**
-         * @brief               Sets the log level.
-         * @param    level      The log level. Only this and lower level messages are logged.
+         * @brief                       Sets the log level.
+         * @param    level              The log level. Only this and lower level messages are logged.
          */
         void setLogLevel( Level level );
         
         /**
-         * @brief               Gets log level.
-         * @return              The log level.
+         * @brief                       Gets log level.
+         * @return                      The log level.
          */
         Level getLogLevel() const;
         
         /**
-         * @brief               Gets the path to log file. Logger does not keep track any information about truncated or rotated logs.
-                                Therefore, this path is the initialized path that the object is logging
-         * @return              The log file path.
+         * @brief                       Gets the path to log file. Logger does not keep track any information about truncated or rotated logs.
+                                        Therefore, this path is the initialized path that the object is logging
+         * @return                      The log file path.
          */
         std::string getPath() const;
         
         /**
-         * @brief               Gets the current size of the log file. Logger does not keep track any information about truncated or rotated logs.
-                                Therefore, this size is the size remaining of the file after any number truncations or rotations
-         * @return              The current size of the log file.
+         * @brief                       Gets the current size of the log file. Logger does not keep track any information about truncated or rotated logs.
+                                        Therefore, this size is the size remaining of the file after any number truncations or rotations
+         * @return                      The current size of the log file.
          */
         size_t getLogSize();
         
         /**
-         * @brief               Overloaded () operator for logging
-                                Returns an ostringstream object which accumulates messages from the user with C++ style with << operator
-         * @param    level      The log level.
-         * @return              custom ostringstream object
+         * @brief                       Overloaded () operator for logging
+                                        Returns an ostringstream object which accumulates messages from the user with C++ style with << operator
+         * @param    level              The log level.
+         * @return                      custom ostringstream object
          */
         logstream operator()(const Level& level)
         {
@@ -164,15 +164,23 @@ namespace rw
         Logger(const Logger& other);
         
         /**
-         * @brief               Opens m_pFile (does not create, only opens).
-         * @return              RESULT_OK if successful.
+         * @brief                       Opens m_pFile (does not create, only opens).
+         * @return                      RESULT_OK if successful.
          */
         Result open();
         
         /**
-         * @brief               Closes m_pFile (does not delete, only closes).
+         * @brief                       Closes m_pFile (does not delete, only closes).
          */
         void close();
+        
+        /**
+         * @brief                       Truncates the  log file to the given new length. Length is approximate.
+         * @param   newLen              New length of the log file. If new length is smaller then min length is assigned as new length
+         *
+         * @return                      RES_OK if successful, RES_ERROR otherwise
+         */
+        Result truncate( size_t newLen );
         
         /**
          * @brief    Does the actual logging with given level and message.

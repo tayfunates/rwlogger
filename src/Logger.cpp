@@ -11,6 +11,7 @@
 #include <fstream>
 #include <chrono>
 #include <thread>
+#include <algorithm>
 
 //Logger defines
 #define RW_DEFAULT_MAX_LOG_LENGTH    (1024*1024)
@@ -136,6 +137,16 @@ namespace rw
         else return std::string("   ");
     }
     
+    static std::string getTimeAndDateString()
+    {
+        auto now = std::chrono::system_clock::now();
+        std::time_t time_for_now = std::chrono::system_clock::to_time_t(now);
+        std::string timeStr( std::ctime(&time_for_now) );
+        size_t end = timeStr.find_last_of('\n');
+        timeStr = timeStr.substr(0,end);
+        return timeStr;
+    }
+    
     void Logger::doLog(const Level& level, const std::string& message)
     {
         if(!m_enabled) {
@@ -146,22 +157,26 @@ namespace rw
             return;
         }
         
-        auto now = std::chrono::system_clock::now();
-        std::time_t time_for_now = std::chrono::system_clock::to_time_t(now);
-        std::string timeStr( std::ctime(&time_for_now) );
-        size_t end = timeStr.find_last_of('\n');
-        timeStr = timeStr.substr(0,end);
-        
         const std::thread::id threadId = std::this_thread::get_id();
         const std::string lvl = getLogLevelString(level);
         
         std::stringstream messageStream;
-        messageStream << timeStr << " " << threadId << " " << lvl << "| " << message;
+        messageStream << getTimeAndDateString() << " " << threadId << " " << lvl << "| " << message << std::endl;
         
         {
             std::lock_guard<std::recursive_mutex> lk(m_logMutex);
             
-            //TO DO: Truncation and rotation
+            if(m_overflowAction != ACTION_NONE)
+            {
+                const size_t logSize = getLogSize();
+                if(m_overflowAction == ACTION_TRUNCATE && (logSize > m_maxLogSize))
+                {
+                    truncate(m_maxLogSize/2);
+                }
+            }
+
+            
+            //TO DO: rotation
             
             if(open() == RES_OK)
             {
@@ -175,6 +190,47 @@ namespace rw
                 ostr << messageStream.str();
             }
         }
+    }
+    
+    Logger::Result Logger::truncate( size_t newLen )
+    {
+        if(newLen<m_minLogSize) {
+            newLen = m_minLogSize;
+        }
+        
+        std::fstream inFile;
+        inFile.open( m_path.c_str(), std::ios::in | std::ios::binary );
+        if(inFile.is_open())
+        {
+            inFile.seekp(-int(newLen), std::ios::end );
+            std::string timeStr = getTimeAndDateString();
+            std::replace (timeStr.begin(), timeStr.end(), ':', ' ');
+            timeStr.erase(std::remove(timeStr.begin(), timeStr.end(), ' '), timeStr.end());
+            
+            std::fstream tempFile;
+            std::string tempFileName(m_path+timeStr);
+            
+            tempFile.open( tempFileName.c_str(), std::ios::out | std::ios::binary );
+            if(tempFile.is_open())
+            {
+                std::string line;
+                while(std::getline(inFile, line))
+                {
+                    if(line.length()>0) {
+                        tempFile << line;
+                    }
+                }
+                tempFile.close();
+            }
+            
+            //rename
+            inFile.close();
+            remove(m_path.c_str());
+            rename(tempFileName.c_str(), m_path.c_str());
+            
+            return RES_OK;
+        }
+        return RES_ERROR;
     }
     
     //Manager related implementations
