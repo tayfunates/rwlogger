@@ -359,6 +359,12 @@ namespace rw
         }
         return RES_OK;
     }
+    
+    size_t Logger::getLoggerCount()
+    {
+        std::lock_guard<std::recursive_mutex> lk(m_managerMutex);
+        return m_loggers.size();
+    }
 }
 
 

@@ -237,6 +237,12 @@ namespace rw
          */
         static Result destroy(const std::string& filePath);
         
+        /**
+         * @brief                       Gets number of loggers in the container.
+         * @return                      The logger count.
+         */
+        static size_t getLoggerCount();
+        
     private:
         typedef std::unordered_map<std::string, LogPtr> LoggerContainer;
         
