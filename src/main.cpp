@@ -12,6 +12,7 @@
 #include <thread>
 #include <chrono>
 #include <iomanip>
+#include <assert.h>
 
 using namespace rw;
 
@@ -280,6 +281,7 @@ void TEST_multithreadedMultipleThreadsSingleFile()
         delete threads[i];
     }
     
+	const size_t fi = getFileSize(testFile);
     assert(getFileSize(testFile) == threadCnt * 100 /*Thread fuunction iteration*/ * 49 /*Size per log*/);
     
     Logger::destroy(testFile);

@@ -12,12 +12,19 @@
 #include <chrono>
 #include <thread>
 #include <algorithm>
+#ifdef _MSC_VER
+#define SPRINTF sprintf_s
+#else
+#define SPRINTF std::sprintf
+#endif
 
 //Logger defines
 #define RW_DEFAULT_MAX_LOG_LENGTH    (1024*1024)
 
 namespace rw
 {
+
+
     //Logger related implementations
     
     Logger::Logger()
@@ -143,10 +150,16 @@ namespace rw
         std::chrono::system_clock::duration tp = now.time_since_epoch();
         tp -= std::chrono::duration_cast<std::chrono::seconds>(tp);
         time_t tt = std::chrono::system_clock::to_time_t(now);
-        const tm t= *localtime(&tt);
+
+#ifdef _MSC_VER
+		tm t;
+		localtime_s(&t, &tt);
+#else
+ const tm t = *localtime(&tt);
+#endif
         
         char buff[30];
-        std::sprintf(buff, "[%04u-%02u-%02u-%02u-%02u-%02u-%03u]", t.tm_year + 1900,
+		SPRINTF(buff, "[%04u-%02u-%02u-%02u-%02u-%02u-%03u]", t.tm_year + 1900,
                     t.tm_mon + 1, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec,
                     static_cast<unsigned>(tp / std::chrono::milliseconds(1)));
         
