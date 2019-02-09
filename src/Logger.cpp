@@ -154,13 +154,11 @@ namespace rw
 		tm t;
 		localtime_s(&t, &tt);
 #else
- const tm t = *localtime(&tt);
+        const tm t = *localtime(&tt);
 #endif
         
         char buff[30];
-		SPRINTF(buff, "[%04u-%02u-%02u-%02u-%02u-%02u-%03u]", t.tm_year + 1900,
-                    t.tm_mon + 1, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec,
-                    static_cast<unsigned>(tp / std::chrono::milliseconds(1)));
+        SPRINTF(buff, "[%04u-%02u-%02u-%02u-%02u-%02u-%03u]", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec, static_cast<unsigned>(tp / std::chrono::milliseconds(1)));
         
         return std::string(buff);
     }
