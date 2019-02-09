@@ -24,9 +24,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		7C074C81220F93BE002A29B4 /* Logger.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Logger.cpp; path = /Users/tates/Workspace/self/rwlogger/build/macos/rwlogger/rwlogger/../../../../src/Logger.cpp; sourceTree = "<absolute>"; };
-		7C074C83220F93C9002A29B4 /* Logger.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Logger.h; path = /Users/tates/Workspace/self/rwlogger/build/macos/rwlogger/rwlogger/../../../../src/Logger.h; sourceTree = "<absolute>"; };
-		7C074C84220F93D0002A29B4 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = /Users/tates/Workspace/self/rwlogger/build/macos/rwlogger/rwlogger/../../../../src/main.cpp; sourceTree = "<absolute>"; };
+		7C074C81220F93BE002A29B4 /* Logger.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Logger.cpp; path = ../../../src/Logger.cpp; sourceTree = SOURCE_ROOT; };
+		7C074C83220F93C9002A29B4 /* Logger.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Logger.h; path = ../../../src/Logger.h; sourceTree = SOURCE_ROOT; };
+		7C074C84220F93D0002A29B4 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = ../../../src/main.cpp; sourceTree = SOURCE_ROOT; };
 		7C5A13BB220DE70A00B0E99B /* rwlogger */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = rwlogger; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -64,9 +64,8 @@
 				7C074C83220F93C9002A29B4 /* Logger.h */,
 				7C074C84220F93D0002A29B4 /* main.cpp */,
 			);
-			name = rwlogger;
-			path = /Users/tates/Workspace/self/rwlogger/build/macos/rwlogger/rwlogger;
-			sourceTree = "<absolute>";
+			path = rwlogger;
+			sourceTree = SOURCE_ROOT;
 		};
 /* End PBXGroup section */
 
