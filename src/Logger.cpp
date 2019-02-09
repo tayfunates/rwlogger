@@ -139,12 +139,18 @@ namespace rw
     
     static std::string getTimeAndDateString()
     {
-        auto now = std::chrono::system_clock::now();
-        std::time_t time_for_now = std::chrono::system_clock::to_time_t(now);
-        std::string timeStr( std::ctime(&time_for_now) );
-        size_t end = timeStr.find_last_of('\n');
-        timeStr = timeStr.substr(0,end);
-        return timeStr;
+        std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+        std::chrono::system_clock::duration tp = now.time_since_epoch();
+        tp -= std::chrono::duration_cast<std::chrono::seconds>(tp);
+        time_t tt = std::chrono::system_clock::to_time_t(now);
+        const tm t= *localtime(&tt);
+        
+        char buff[30];
+        std::sprintf(buff, "[%04u-%02u-%02u-%02u-%02u-%02u-%03u]", t.tm_year + 1900,
+                    t.tm_mon + 1, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec,
+                    static_cast<unsigned>(tp / std::chrono::milliseconds(1)));
+        
+        return std::string(buff);
     }
     
     void Logger::doLog(const Level& level, const std::string& message)
@@ -208,11 +214,9 @@ namespace rw
         {
             inFile.seekp(-int(newLen), std::ios::end );
             std::string timeStr = getTimeAndDateString();
-            std::replace (timeStr.begin(), timeStr.end(), ':', ' ');
-            timeStr.erase(std::remove(timeStr.begin(), timeStr.end(), ' '), timeStr.end());
             
             std::fstream tempFile;
-            std::string tempFileName(m_path+"."+timeStr+".log");
+            std::string tempFileName(m_path+"_"+timeStr+".log");
             
             tempFile.open( tempFileName.c_str(), std::ios::out | std::ios::binary );
             if(tempFile.is_open())
@@ -240,11 +244,11 @@ namespace rw
     Logger::Result Logger::rotate()
     {
         std::string timeStr = getTimeAndDateString();
-        std::replace (timeStr.begin(), timeStr.end(), ':', ' ');
-        timeStr.erase(std::remove(timeStr.begin(), timeStr.end(), ' '), timeStr.end());
-        std::string newFileName(m_path+"."+timeStr+".log");
+        std::string newFileName(m_path+"_"+timeStr+".log");
+        
+        close();
         rename(m_path.c_str(), newFileName.c_str());
-        remove(m_path.c_str());
+        
         return RES_OK;
     }
     
