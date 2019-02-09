@@ -118,12 +118,34 @@ void TEST_userDefinedTypes()
     remove(testFile.c_str());
 }
 
+void TEST_truncation()
+{
+    const std::string testFile = "TEST_truncation";
+    const size_t longStringSize = 200;
+    const std::string longString = std::string(longStringSize, 'a');
+    const size_t maxSize = 2048;
+    
+    auto customLogger = Logger::getFileLogger(testFile, Logger::ACTION_TRUNCATE);
+    customLogger->setMaxLogSize(maxSize);
+    
+    const size_t numberOfTrials = 100;
+    
+    for(size_t i=0; i < numberOfTrials; i++) {
+        //For each trial file size should not exceed maxSize + longStringSize -> We truncate in the next round
+        customLogger->operator()(Logger::LOG_LEVEL_WARNING) << longString;
+        assert(getFileSize(testFile) <= maxSize+longStringSize);
+    }
+    
+    remove(testFile.c_str());
+}
+
 int main(int argc, const char * argv[]) {
     
     TEST_init();
     TEST_getAndDestroyLoggers();
     TEST_enableDisable();
     TEST_logLevel();
+    TEST_truncation();
     
     return 0;
 }
