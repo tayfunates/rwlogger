@@ -129,7 +129,6 @@ namespace rw
         if( open() == Logger::RES_OK ) {
             ((std::fstream*)m_pFile)->seekp(0, std::ios::end );
             size_t size = (size_t) ((std::fstream*)m_pFile)->tellp();
-            close();
             return size;
         }
         return 0;
