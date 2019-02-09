@@ -281,8 +281,7 @@ void TEST_multithreadedMultipleThreadsSingleFile()
         delete threads[i];
     }
     
-	const size_t fi = getFileSize(testFile);
-    assert(getFileSize(testFile) == threadCnt * 100 /*Thread fuunction iteration*/ * 49 /*Size per log*/);
+    assert(getFileSize(testFile) == threadCnt * 100 /*Thread function iteration*/ * 51 /*Size per log*/);
     
     Logger::destroy(testFile);
     remove(testFile.c_str());
