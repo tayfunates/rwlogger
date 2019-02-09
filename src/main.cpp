@@ -217,6 +217,50 @@ void TEST_multithreadedCreationAndDestruction()
     assert(Logger::getLoggerCount() == 2);
 }
 
+void loggerWriterThread( bool retainTemporarily, std::string loggerId, int loopCount )
+{
+    if (retainTemporarily)
+    {
+        for (int i=0;i<loopCount;++i)
+        {
+            LOGF(Logger::LOG_LEVEL_ERROR, loggerId) << i;
+        }
+    }
+    else
+    {
+        Logger::LogPtr ptr = Logger::getFileLogger( loggerId );
+        for (int i=0;i<loopCount;++i)
+        {
+            ptr->operator()(Logger::LOG_LEVEL_ERROR) << i;
+        }
+    }
+}
+
+void TEST_multithreadedDestructionWhileInUse()
+{
+    const std::string testFile = "TEST_multithreadedDestructionWhileInUse";
+    // Create a writer thread and destruct while in use
+    // Destroy a fully thread-retained logger while in use by the thread
+    // It must not crash
+    {
+        std::thread thread( loggerWriterThread, false, testFile, 100 );
+        std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) ); // wait a while
+        Logger::destroy( testFile ); // and destroy while the writer thread is (most probably) still active
+        thread.join(); // wait writer thread
+    }
+    // Destroy a temporarily thread-retained logger while in use by the thread
+    // It must not crash
+    {
+        std::thread thread( loggerWriterThread, true, testFile, 100 );
+        std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) ); // wait a while
+        Logger::destroy( testFile ); // and destroy while the writer thread is (most probably) still active
+        thread.join(); // wait writer thread
+    }
+    
+    Logger::destroy(testFile);
+    remove(testFile.c_str());
+}
+
 int main(int argc, const char * argv[]) {
     
     TEST_init();
@@ -226,6 +270,7 @@ int main(int argc, const char * argv[]) {
     TEST_truncation();
     //TEST_rotate(); --> Creates multiple files, disabled for now.
     TEST_multithreadedCreationAndDestruction();
+    TEST_multithreadedDestructionWhileInUse();
     
     return 0;
 }
