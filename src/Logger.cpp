@@ -221,7 +221,7 @@ namespace rw
                 while(std::getline(inFile, line))
                 {
                     if(line.length()>0) {
-                        tempFile << line;
+                        tempFile << line << std::endl;
                     }
                 }
                 tempFile.close();
