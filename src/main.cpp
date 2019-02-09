@@ -92,6 +92,32 @@ void TEST_logLevel()
     remove(testFile.c_str());
 }
 
+class GoodPoint
+{
+private:
+    double m_x, m_y, m_z;
+    
+public:
+    GoodPoint(double x=0.0, double y=0.0, double z=0.0): m_x(x), m_y(y), m_z(z)
+    {
+    }
+    
+    friend std::ostream& operator<< (std::ostream &out, const GoodPoint &point)
+    {
+            out << "Point(" << point.m_x << ", " << point.m_y << ", " << point.m_z << ")"; // actual output done here
+            return out;
+    }
+};
+
+void TEST_userDefinedTypes()
+{
+    const std::string testFile = "TEST_userDefinedTypes.log";
+    LOGF(Logger::LOG_LEVEL_WARNING, testFile) << GoodPoint(1.0f, 2.0f, 3.0f);
+    assert(getFileSize(testFile) > 0);
+    
+    remove(testFile.c_str());
+}
+
 int main(int argc, const char * argv[]) {
     
     TEST_init();
