@@ -15,6 +15,8 @@
 
 namespace rw
 {
+    //Logger related implementations
+    
     Logger::Logger()
     {
         m_path = "";
@@ -55,7 +57,7 @@ namespace rw
     {
         // RAII locker -> https://en.cppreference.com/w/cpp/language/raii
         // Any updates to Logger objects should be protected
-        std::lock_guard<std::mutex> lk(m_mutex);
+        std::lock_guard<std::mutex> lk(m_logMutex);
         m_enabled = enabled;
     }
     
@@ -66,7 +68,7 @@ namespace rw
     
     void Logger::setReflectToConsole( bool b)
     {
-        std::lock_guard<std::mutex> lk(m_mutex);
+        std::lock_guard<std::mutex> lk(m_logMutex);
         m_reflectToConsole = b;
     }
     
@@ -77,7 +79,7 @@ namespace rw
     
     void Logger::setMaxLogSize( size_t maxLen )
     {
-        std::lock_guard<std::mutex> lk(m_mutex);
+        std::lock_guard<std::mutex> lk(m_logMutex);
         if (maxLen<=m_minLogSize) maxLen = m_minLogSize;
         m_maxLogSize = maxLen;
     }
@@ -89,7 +91,7 @@ namespace rw
     
     void Logger::setLogLevel( Level level )
     {
-        std::lock_guard<std::mutex> lk(m_mutex);
+        std::lock_guard<std::mutex> lk(m_logMutex);
         m_logLevel = level;
     }
     
@@ -105,7 +107,7 @@ namespace rw
     
     size_t Logger::getLogSize()
     {
-        std::lock_guard<std::mutex> lk(m_mutex);
+        std::lock_guard<std::mutex> lk(m_logMutex);
         if( open() == Logger::RES_OK ) {
             ((std::fstream*)m_pFile)->seekp(0, std::ios::end );
             size_t size = (size_t) ((std::fstream*)m_pFile)->tellp();
@@ -117,11 +119,119 @@ namespace rw
     
     Logger::Result Logger::open()
     {
-        std::lock_guard<std::mutex> lk(m_mutex);
+        std::lock_guard<std::mutex> lk(m_logMutex);
         if ( ((std::fstream*)m_pFile)->is_open()) return Logger::RES_OK;
         
         ((std::fstream*)m_pFile)->open( m_path.c_str(), std::ios::out | std::ios::app  );
         return ((std::fstream*)m_pFile)->is_open() ? Logger::RES_OK : Logger::RES_FILE_ERROR;
+    }
+    
+    //Manager related implementations
+    
+    const std::string Logger::defaultLoggerFilePath = "rw_default_log.txt";
+    const std::string Logger::consoleLoggerFilePath = "";
+    std::mutex Logger::m_managerMutex;
+    Logger::LoggerContainer Logger::m_loggers;
+    
+    Logger::Result Logger::init()
+    {
+        LogPtr consoleLogger = getConsoleLogger();
+        if(consoleLogger) {
+            return RES_OK;
+        }
+        return RES_MEMORY_ERROR;
+    }
+    
+    Logger::LogPtr Logger::getConsoleLogger()
+    {
+        std::lock_guard<std::mutex> lk(m_managerMutex);
+        const LoggerContainer::iterator it = m_loggers.find(consoleLoggerFilePath);
+        
+        LogPtr res;
+        if(it != m_loggers.end()) {
+            res = it->second;
+        }
+        else
+        {
+            Logger* pLogger = new (std::nothrow) Logger(consoleLoggerFilePath, ACTION_NONE);
+            if(pLogger) {
+                pLogger->setReflectToConsole(true);
+                res = LogPtr(pLogger);
+                m_loggers[consoleLoggerFilePath] = res;
+            }
+        }
+        return res;
+    }
+    
+    Logger::LogPtr Logger::getDefaultLogger(const Logger::OverflowAction& overflowAction)
+    {
+        std::lock_guard<std::mutex> lk(m_managerMutex);
+        const LoggerContainer::iterator it = m_loggers.find(defaultLoggerFilePath);
+        
+        LogPtr res;
+        if(it != m_loggers.end()) {
+            res = it->second;
+        }
+        else
+        {
+            Logger* pLogger = new (std::nothrow) Logger(defaultLoggerFilePath, overflowAction);
+            if(pLogger) {
+                res = LogPtr(pLogger);
+                m_loggers[defaultLoggerFilePath] = res;
+            }
+            else
+            {
+                res = getConsoleLogger();
+            }
+        }
+        return res;
+    }
+    
+    Logger::LogPtr Logger::getFileLogger(const std::string& filePath, const Logger::OverflowAction& overflowAction)
+    {
+        std::lock_guard<std::mutex> lk(m_managerMutex);
+        const LoggerContainer::iterator it = m_loggers.find(filePath);
+        
+        LogPtr res;
+        if(it != m_loggers.end()) {
+            res = it->second;
+        }
+        else
+        {
+            Logger* pLogger = new (std::nothrow) Logger(filePath, overflowAction);
+            if(pLogger) {
+                res = LogPtr(pLogger);
+                m_loggers[filePath] = res;
+            }
+            else
+            {
+                res = getConsoleLogger();
+            }
+        }
+        return res;
+    }
+    
+    Logger::Result Logger::destroy(const std::string& filePath)
+    {
+        if(filePath == "")
+        {
+            return RES_BAD_ARGS; //Cannot remove console logger
+        }
+        if(filePath == defaultLoggerFilePath)
+        {
+            return RES_BAD_ARGS; //Cannot remove default logger
+        }
+        
+        std::lock_guard<std::mutex> lk(m_managerMutex);
+        const LoggerContainer::iterator it = m_loggers.find(filePath);
+        if(it != m_loggers.end()) {
+            m_loggers.erase(it);
+        }
+        else
+        {
+            return RES_ERROR;
+        }
+        return RES_OK;
     }
 }
 
