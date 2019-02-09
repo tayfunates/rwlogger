@@ -281,7 +281,12 @@ void TEST_multithreadedMultipleThreadsSingleFile()
         delete threads[i];
     }
     
-    assert(getFileSize(testFile) == threadCnt * 100 /*Thread function iteration*/ * 51 /*Size per log*/);
+#ifdef _MSC_VER
+	const size_t expectedLineSize = 52;
+#else
+	const size_t expectedLineSize = 51;
+#endif
+    assert(getFileSize(testFile) == threadCnt * 100 /*Thread function iteration*/ * expectedLineSize /*Size per log*/);
     
     Logger::destroy(testFile);
     remove(testFile.c_str());
