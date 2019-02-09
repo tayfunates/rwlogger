@@ -75,6 +75,7 @@ void TEST_enableDisable()
     customLogger->operator()(Logger::LOG_LEVEL_ERROR) << errorMessage;
     assert(getFileSize(testFile) > 0);
     
+    Logger::destroy(testFile);
     remove(testFile.c_str());
 }
 
@@ -91,6 +92,7 @@ void TEST_logLevel()
     customLogger->operator()(Logger::LOG_LEVEL_WARNING) << warningMessage;
     assert(getFileSize(testFile) > 0);
     
+    Logger::destroy(testFile);
     remove(testFile.c_str());
 }
 
@@ -117,6 +119,7 @@ void TEST_userDefinedTypes()
     LOGF(Logger::LOG_LEVEL_WARNING, testFile) << GoodPoint(1.0f, 2.0f, 3.0f);
     assert(getFileSize(testFile) > 0);
     
+    Logger::destroy(testFile);
     remove(testFile.c_str());
 }
 
@@ -138,6 +141,7 @@ void TEST_truncation()
         assert(getFileSize(testFile) <= maxSize+longStringSize);
     }
     
+    Logger::destroy(testFile);
     remove(testFile.c_str());
 }
 
@@ -170,10 +174,47 @@ void TEST_rotate()
         }
     }
     
+    Logger::destroy(testFile);
     remove(testFile.c_str());
     
     //TO DO: Check and remove rotated files
     //Logger does not keep track of the rotated files currently.
+}
+
+void loggerCreationDestructionThread( int loopCount )
+{
+    for (int i=0;i<loopCount;++i)
+    {
+        int id = rand() & 0xFF;
+        std::stringstream ss;
+        ss << id << ".log";
+        const std::string logFile = ss.str();
+        Logger::getFileLogger(logFile);
+        Logger::destroy(logFile);
+    }
+}
+
+void TEST_multithreadedCreationAndDestruction()
+{
+    const int threadCnt = 8;
+    std::thread* threads[threadCnt];
+    
+    // Run creater/destoyer threads.
+    for ( int i=0;i<threadCnt;++i)
+    {
+        threads[i] = new std::thread( loggerCreationDestructionThread, 1000 );
+    }
+    // Wait for threads
+    for ( int i=0;i<threadCnt;++i)
+    {
+        threads[i]->join();
+        delete threads[i];
+    }
+    
+    //8 threads created and destroyed 1000 loggers possibly looking the same file
+    //None of the action should lead cause crash
+    //There should be 2 loggers remaining which is the console logger and the default file logger
+    assert(Logger::getLoggerCount() == 2);
 }
 
 int main(int argc, const char * argv[]) {
@@ -183,7 +224,8 @@ int main(int argc, const char * argv[]) {
     TEST_enableDisable();
     TEST_logLevel();
     TEST_truncation();
-    TEST_rotate();
+    //TEST_rotate(); --> Creates multiple files, disabled for now.
+    TEST_multithreadedCreationAndDestruction();
     
     return 0;
 }
